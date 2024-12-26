@@ -22,11 +22,18 @@ FROM debian:buster-slim
 # Set the working directory
 WORKDIR /app
 
+# Add a non-root user and switch to it
+RUN useradd -m appuser
+USER appuser
+
 # Copy the built binary from the builder stage
 COPY --from=builder /app/mockapp ./
 
 # Expose the application port
 EXPOSE 8080
+
+# Add a health check
+HEALTHCHECK CMD curl --fail http://localhost:8080/health || exit 1
 
 # Command to run the application
 CMD ["./mockapp"]
