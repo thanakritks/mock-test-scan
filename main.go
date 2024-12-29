@@ -36,8 +36,9 @@ func main() {
 		username := r.URL.Query().Get("username")
 		password := r.URL.Query().Get("password")
 
-		query := fmt.Sprintf("SELECT id FROM users WHERE username='%s' AND password='%s'", username, password) // Potential SQL injection
-		row := db.QueryRow(query)
+		// Use parameterized query
+		query := `SELECT id FROM users WHERE username = ? AND password = ?`
+		row := db.QueryRow(query, username, password)
 
 		var id int
 		if err := row.Scan(&id); err != nil {
