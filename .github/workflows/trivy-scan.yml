@@ -3,7 +3,7 @@ name: Trivy Vulnerability Scan
 on:
   push:
     branches:
-      - main
+      - trivy
 
 jobs:
   scan:
@@ -18,3 +18,8 @@ jobs:
       with:
         image-ref: ${{ secrets.DOCKER_USERNAME }}/mock-app:latest
         format: table
+    - name: Upload Trivy results
+      uses: actions/upload-artifact@v2
+      with:
+        name: trivy-results
+        path: ./trivy-results

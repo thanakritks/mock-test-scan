@@ -33,6 +33,34 @@ jobs:
       run: |
         docker build -t ${{ secrets.DOCKER_USERNAME }}/mock-app:latest .
 
+    - name: Generate SBOM
+      run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          syft ${{ secrets.DOCKER_USERNAME }}/mock-app:latest -o json > sbom.json
+  
     - name: Push Docker image
       run: |
-        docker push ${{ secrets.DOCKER_USERNAME }}/mock-app:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/mock-app:latest
+  
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v2
+      with:
+          name: sbom
+          path: sbom.json
+
+    - name: Run Checkmarx scan
+      id: checkmarx_scan
+      uses: checkmarx/ast-github-action@main # Ensure to use the latest version
+      with:
+          project_name: ${{ inputs.project_name }}  # The name of the project in Checkmarx
+          cx_tenant: ${{ secrets.CX_TENANT }}                    # The tenant in Checkmarx
+          base_uri: https://sng.ast.checkmarx.net/ # Checkmarx API endpoint
+          cx_client_id: ${{ secrets.CX_CLIENT_ID }}     # Client ID stored in GitHub secrets
+          cx_client_secret: ${{ secrets.CX_CLIENT_SECRET }} # Client secret stored in GitHub secrets
+          additional_params: --report-format sarif --output-path . --output-name ${{ inputs.project_name }} # Additional parameters for the scan
+   
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v2
+      with:
+              name: ${{ inputs.project_name }}
+              path: ./
